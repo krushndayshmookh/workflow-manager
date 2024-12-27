@@ -6,7 +6,7 @@
         <q-card flat bordered>
           <q-card-section>
             <div class="row q-col-gutter-md items-center">
-              <div class="col-12 col-sm-4">
+              <div class="col-12 col-md-4">
                 <q-input
                   v-model="taskStore.filters.search"
                   dense
@@ -19,9 +19,9 @@
                   </template>
                 </q-input>
               </div>
-              <div class="col-12 col-sm-8">
+              <div class="col-12 col-md-8">
                 <div class="row q-col-gutter-sm">
-                  <div class="col">
+                  <div class="col-12 col-sm-4">
                     <q-select
                       v-model="taskStore.filters.state"
                       :options="taskStore.states"
@@ -35,7 +35,7 @@
                       label="State"
                     />
                   </div>
-                  <div class="col">
+                  <div class="col-12 col-sm-4">
                     <q-select
                       v-model="taskStore.filters.priority"
                       :options="taskStore.priorities"
@@ -49,7 +49,7 @@
                       label="Priority"
                     />
                   </div>
-                  <div class="col">
+                  <div class="col-12 col-sm-4">
                     <q-select
                       v-model="taskStore.filters.assigned_to"
                       :options="people"
@@ -63,12 +63,13 @@
                       clearable
                     />
                   </div>
-                  <div class="col">
+                  <div class="col-12 q-mt-sm">
                     <q-btn
                       color="primary"
                       icon="filter_alt_off"
                       label="Clear Filters"
                       flat
+                      class="full-width"
                       @click="taskStore.clearFilters"
                     />
                   </div>
@@ -96,15 +97,16 @@
 
               <q-item-section>
                 <q-item-label>
-                  <div class="row items-center">
-                    <div class="text-weight-medium">{{ task.title }}</div>
-                    <q-space />
-                    <q-chip :color="getStateColor(task.state)" text-color="white" size="sm">
-                      {{ getStateName(task.state) }}
-                    </q-chip>
-                    <q-chip :color="getPriorityColor(task.priority)" text-color="white" size="sm">
-                      {{ getPriorityName(task.priority) }}
-                    </q-chip>
+                  <div class="row items-center q-gutter-sm wrap">
+                    <div class="text-weight-medium col-12 col-sm-grow">{{ task.title }}</div>
+                    <div class="col-12 col-sm-auto">
+                      <q-chip :color="getStateColor(task.state)" text-color="white" size="sm">
+                        {{ getStateName(task.state) }}
+                      </q-chip>
+                      <q-chip :color="getPriorityColor(task.priority)" text-color="white" size="sm">
+                        {{ getPriorityName(task.priority) }}
+                      </q-chip>
+                    </div>
                   </div>
                 </q-item-label>
                 <q-item-label caption>
@@ -113,7 +115,7 @@
               </q-item-section>
 
               <q-item-section side>
-                <div class="row items-center">
+                <div class="row items-center q-gutter-x-sm">
                   <q-btn flat round color="primary" icon="edit" size="sm" @click="editTask(task)" />
                   <q-btn
                     flat

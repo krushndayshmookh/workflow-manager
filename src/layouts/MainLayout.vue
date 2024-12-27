@@ -2,13 +2,24 @@
   <q-layout view="lHh Lpr lFf">
     <q-header elevated>
       <q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
+        <q-btn
+          flat
+          dense
+          round
+          icon="menu"
+          aria-label="Menu"
+          @click="toggleLeftDrawer"
+          class="lt-md"
+        />
 
-        <q-toolbar-title> Workflow Manager </q-toolbar-title>
+        <q-toolbar-title class="text-center gt-sm"> Workflow Manager </q-toolbar-title>
+        <q-toolbar-title class="lt-md"> WM </q-toolbar-title>
+
+        <q-space />
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+    <q-drawer v-model="leftDrawerOpen" show-if-above :breakpoint="1023" bordered class="bg-white">
       <q-list>
         <q-item-label header> Navigation </q-item-label>
 

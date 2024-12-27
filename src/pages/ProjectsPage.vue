@@ -1,9 +1,17 @@
 <template>
   <q-page class="q-pa-md">
     <div class="row items-center q-mb-lg">
-      <div class="text-h5">Projects</div>
-      <q-space />
-      <q-btn color="primary" icon="add" label="New Project" @click="showProjectForm = true" />
+      <div class="text-h5 col-grow">Projects</div>
+      <div class="col-auto">
+        <q-btn
+          color="primary"
+          icon="add"
+          :label="$q.screen.gt.xs ? 'New Project' : ''"
+          @click="showProjectForm = true"
+        >
+          <q-tooltip v-if="!$q.screen.gt.xs">New Project</q-tooltip>
+        </q-btn>
+      </div>
     </div>
 
     <!-- Projects List -->
@@ -11,25 +19,44 @@
       <div
         v-for="project in projectStore.projects"
         :key="project.id"
-        class="col-12 col-sm-6 col-md-4"
+        class="col-12 col-sm-6 col-lg-4"
       >
         <q-card>
           <q-card-section>
-            <div class="row items-center">
-              <div class="text-h6">{{ project.icon }} {{ project.name }}</div>
-              <q-space />
-              <q-btn flat round color="primary" icon="edit" @click="editProject(project)" />
-              <q-btn flat round color="negative" icon="delete" @click="confirmDelete(project)" />
+            <div class="row items-center q-gutter-sm">
+              <div class="text-h6 col-grow">{{ project.icon }} {{ project.name }}</div>
+              <div class="col-auto">
+                <q-btn
+                  flat
+                  round
+                  color="primary"
+                  icon="edit"
+                  size="sm"
+                  @click="editProject(project)"
+                >
+                  <q-tooltip>Edit Project</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  round
+                  color="negative"
+                  icon="delete"
+                  size="sm"
+                  @click="confirmDelete(project)"
+                >
+                  <q-tooltip>Delete Project</q-tooltip>
+                </q-btn>
+              </div>
             </div>
           </q-card-section>
 
-          <q-card-section>
-            <p class="text-body1">{{ project.description || 'No description' }}</p>
+          <q-card-section class="q-pt-none">
+            <p class="text-body1 q-mb-none">{{ project.description || 'No description' }}</p>
           </q-card-section>
 
-          <q-card-section>
+          <q-card-section class="q-pt-none">
             <div class="row items-center">
-              <q-chip :style="{ backgroundColor: project.color }" text-color="white">
+              <q-chip :style="{ backgroundColor: project.color }" text-color="white" size="sm">
                 {{ project.color }}
               </q-chip>
             </div>
@@ -39,10 +66,12 @@
     </div>
 
     <!-- Project Form Dialog -->
-    <q-dialog v-model="showProjectForm" persistent>
-      <q-card style="min-width: 350px">
-        <q-card-section>
+    <q-dialog v-model="showProjectForm" persistent :maximized="$q.screen.lt.sm">
+      <q-card :style="$q.screen.gt.xs ? 'min-width: 350px; max-width: 500px' : ''">
+        <q-card-section class="row items-center">
           <div class="text-h6">{{ selectedProject ? 'Edit Project' : 'New Project' }}</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
 
         <q-card-section class="q-pt-none">
