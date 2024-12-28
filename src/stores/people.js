@@ -9,6 +9,8 @@ export const usePeopleStore = defineStore('people', {
     error: null,
   }),
 
+  persist: true,
+
   getters: {
     getPeopleByRole: (state) => (role) => {
       return state.people.filter((person) => person.role === role)
@@ -75,19 +77,15 @@ export const usePeopleStore = defineStore('people', {
       }
     },
 
-    async getCurrentUser() {
+    getCurrentUser() {
       try {
         const authStore = useAuthStore()
         if (!authStore.user) return null
 
-        const { data, error } = await supabase
-          .from('people')
-          .select('*')
-          .eq('id', authStore.user.id)
-          .single()
+        const email = authStore.user.email
+        const user = this.getPeopleByEmail(email)
 
-        if (error) throw error
-        return data
+        return user
       } catch (error) {
         console.error('Error fetching current user:', error)
         return null

@@ -12,6 +12,8 @@ export const useProjectStore = defineStore('project', {
     allTasks: [],
   }),
 
+  persist: true,
+
   getters: {
     isProjectAdmin: (state) => {
       if (!state.currentProject) return false

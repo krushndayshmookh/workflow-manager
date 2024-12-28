@@ -5,9 +5,7 @@ const routes = [
     children: [
       {
         path: '',
-        name: 'home',
-        component: () => import('pages/IndexPage.vue'),
-        meta: { requiresAuth: true },
+        redirect: { name: 'projects' },
       },
       {
         path: 'projects',

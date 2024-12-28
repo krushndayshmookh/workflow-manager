@@ -30,6 +30,17 @@
                   flat
                   round
                   color="primary"
+                  icon="settings"
+                  size="sm"
+                  :to="`/projects/${project.id}/settings`"
+                >
+                  <q-tooltip>Project Settings</q-tooltip>
+                </q-btn>
+
+                <q-btn
+                  flat
+                  round
+                  color="primary"
                   icon="edit"
                   size="sm"
                   @click="editProject(project)"
@@ -61,6 +72,10 @@
               </q-chip>
             </div>
           </q-card-section>
+
+          <q-card-actions>
+            <q-btn flat color="primary" label="View Tasks" :to="`/projects/${project.id}`" />
+          </q-card-actions>
         </q-card>
       </div>
     </div>

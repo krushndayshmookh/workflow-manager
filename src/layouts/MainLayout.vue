@@ -2,24 +2,35 @@
   <q-layout view="lHh Lpr lFf">
     <q-header elevated>
       <q-toolbar>
+        <!--        <q-btn-->
+        <!--          flat-->
+        <!--          dense-->
+        <!--          round-->
+        <!--          icon="menu"-->
+        <!--          aria-label="Menu"-->
+        <!--          @click="toggleLeftDrawer"-->
+        <!--          class="lt-md"-->
+        <!--        />-->
+
         <q-btn
           flat
           dense
           round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-          class="lt-md"
+          icon="keyboard_arrow_left"
+          aria-label="Back"
+          @click="$router.back()"
         />
 
-        <q-toolbar-title class="text-center gt-sm"> Workflow Manager </q-toolbar-title>
-        <q-toolbar-title class="lt-md"> WM </q-toolbar-title>
+        <q-toolbar-title class=""> Workflow Manager </q-toolbar-title>
 
         <q-space />
 
         <q-btn flat round>
           <q-avatar size="26px">
-            <img :src="currentUser?.avatar_url || 'https://cdn.quasar.dev/img/boy-avatar.png'" alt="avatar default image" />
+            <img
+              :src="currentUser?.avatar_url || 'https://cdn.quasar.dev/img/boy-avatar.png'"
+              alt="avatar default image"
+            />
           </q-avatar>
           <q-menu>
             <q-list style="min-width: 150px">
@@ -48,35 +59,35 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above :breakpoint="1023" bordered class="bg-white">
-      <q-list>
-        <q-item-label header> Navigation </q-item-label>
+    <!--    <q-drawer v-model="leftDrawerOpen" show-if-above :breakpoint="1023" bordered class="bg-white">-->
+    <!--      <q-list>-->
+    <!--        <q-item-label header> Navigation </q-item-label>-->
 
-        <q-item to="/" exact clickable v-ripple>
-          <q-item-section avatar>
-            <q-icon name="task" />
-          </q-item-section>
+    <!--        <q-item to="/" exact clickable v-ripple>-->
+    <!--          <q-item-section avatar>-->
+    <!--            <q-icon name="task" />-->
+    <!--          </q-item-section>-->
 
-          <q-item-section> Tasks </q-item-section>
-        </q-item>
+    <!--          <q-item-section> Tasks </q-item-section>-->
+    <!--        </q-item>-->
 
-        <q-item to="/projects" exact clickable v-ripple>
-          <q-item-section avatar>
-            <q-icon name="folder" />
-          </q-item-section>
+    <!--        <q-item to="/projects" exact clickable v-ripple>-->
+    <!--          <q-item-section avatar>-->
+    <!--            <q-icon name="folder" />-->
+    <!--          </q-item-section>-->
 
-          <q-item-section> Projects </q-item-section>
-        </q-item>
+    <!--          <q-item-section> Projects </q-item-section>-->
+    <!--        </q-item>-->
 
-        <q-item to="/people" exact clickable v-ripple v-if="isAdmin">
-          <q-item-section avatar>
-            <q-icon name="people" />
-          </q-item-section>
+    <!--        <q-item to="/people" exact clickable v-ripple v-if="isAdmin">-->
+    <!--          <q-item-section avatar>-->
+    <!--            <q-icon name="people" />-->
+    <!--          </q-item-section>-->
 
-          <q-item-section> People </q-item-section>
-        </q-item>
-      </q-list>
-    </q-drawer>
+    <!--          <q-item-section> People </q-item-section>-->
+    <!--        </q-item>-->
+    <!--      </q-list>-->
+    <!--    </q-drawer>-->
 
     <q-page-container>
       <router-view />
@@ -85,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { /*ref,*/ computed } from 'vue'
 import { useAuthStore } from 'stores/auth'
 import { usePeopleStore } from 'stores/people'
 import { useRouter } from 'vue-router'
@@ -93,19 +104,19 @@ import { useRouter } from 'vue-router'
 const authStore = useAuthStore()
 const peopleStore = usePeopleStore()
 const router = useRouter()
-const leftDrawerOpen = ref(false)
+// const leftDrawerOpen = ref(false)
 
 const currentUser = computed(() => {
   return peopleStore.getCurrentUser()
 })
 
-const isAdmin = computed(() => {
-  return currentUser.value?.role === 'admin'
-})
+// const isAdmin = computed(() => {
+//   return currentUser.value?.role === 'admin'
+// })
 
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
+// function toggleLeftDrawer() {
+//   leftDrawerOpen.value = !leftDrawerOpen.value
+// }
 
 function signOut() {
   router.push('/auth/login')

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { supabase } from 'src/boot/supabase'
 import { useAuthStore } from './auth'
 import { useProjectStore } from './project'
+import {usePeopleStore} from 'stores/people.js'
 
 export const useTaskStore = defineStore('task', {
   state: () => ({
@@ -9,6 +10,8 @@ export const useTaskStore = defineStore('task', {
     loading: false,
     error: null,
   }),
+
+  persist: true,
 
   getters: {
     getTasksByState: (state) => (stateId) => {
@@ -33,8 +36,8 @@ export const useTaskStore = defineStore('task', {
             *,
             state:task_states(*),
             priority:task_priorities(*),
-            assignee:people(id, name, avatar_url),
-            creator:people(id, name, avatar_url)
+            assignee:people!tasks_assigned_to_fkey(id, name, avatar_url),
+            creator:people!tasks_created_by_fkey(id, name, avatar_url)
           `,
           )
           .eq('project_id', projectId)
@@ -55,6 +58,7 @@ export const useTaskStore = defineStore('task', {
         this.loading = true
         const authStore = useAuthStore()
         const projectStore = useProjectStore()
+        const peopleStore = usePeopleStore()
 
         // If no state is specified, use the first state (usually Backlog)
         if (!taskData.state_id && projectStore.taskStates.length > 0) {
@@ -66,7 +70,7 @@ export const useTaskStore = defineStore('task', {
           .insert([
             {
               ...taskData,
-              created_by: authStore.user.id,
+              created_by: peopleStore.getPeopleByEmail(authStore.user.email).id,
             },
           ])
           .select(
@@ -74,8 +78,8 @@ export const useTaskStore = defineStore('task', {
             *,
             state:task_states(*),
             priority:task_priorities(*),
-            assignee:people(id, name, avatar_url),
-            creator:people(id, name, avatar_url)
+            assignee:people!tasks_assigned_to_fkey(id, name, avatar_url),
+            creator:people!tasks_created_by_fkey(id, name, avatar_url)
           `,
           )
           .single()
@@ -103,8 +107,8 @@ export const useTaskStore = defineStore('task', {
             *,
             state:task_states(*),
             priority:task_priorities(*),
-            assignee:people(id, name, avatar_url),
-            creator:people(id, name, avatar_url)
+            assignee:people!tasks_assigned_to_fkey(id, name, avatar_url),
+            creator:people!tasks_created_by_fkey(id, name, avatar_url)
           `,
           )
           .single()
