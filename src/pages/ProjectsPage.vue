@@ -145,8 +145,8 @@ const form = ref({
   color: '#1976D2',
 })
 
-onMounted(() => {
-  projectStore.fetchProjects()
+onMounted(async () => {
+  await projectStore.fetchUserProjects()
 })
 
 function editProject(project) {

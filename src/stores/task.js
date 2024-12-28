@@ -1,153 +1,160 @@
 import { defineStore } from 'pinia'
-import { supabase } from 'boot/supabase'
+import { supabase } from 'src/boot/supabase'
+import { useAuthStore } from './auth'
+import { useProjectStore } from './project'
 
-export const useTaskStore = defineStore('tasks', {
+export const useTaskStore = defineStore('task', {
   state: () => ({
     tasks: [],
     loading: false,
-    filters: {
-      search: '',
-      state: null,
-      priority: null,
-      assigned_to: null,
-      project: null,
-    },
-    selectedTasks: [],
-    states: [
-      { id: 1, name: 'To Do', color: 'grey' },
-      { id: 2, name: 'In Progress', color: 'blue' },
-      { id: 3, name: 'Done', color: 'green' },
-      { id: 4, name: 'Archived', color: 'black' },
-    ],
-    priorities: [
-      { id: 1, name: 'Low', color: 'grey' },
-      { id: 2, name: 'Medium', color: 'orange' },
-      { id: 3, name: 'High', color: 'red' },
-      { id: 4, name: 'Critical', color: 'purple' },
-    ],
+    error: null,
   }),
 
   getters: {
-    filteredTasks: (state) => {
-      return state.tasks.filter((task) => {
-        const search = state.filters.search.trim().toLowerCase()
-        return (
-          (search
-            ? task.title.toLowerCase().includes(search) ||
-              task.description.toLowerCase().includes(search)
-            : true) &&
-          (state.filters.state ? parseInt(task.state) === parseInt(state.filters.state) : true) &&
-          (state.filters.priority
-            ? parseInt(task.priority) === parseInt(state.filters.priority)
-            : true) &&
-          (state.filters.assigned_to ? task.assigned_to === state.filters.assigned_to : true) &&
-          (state.filters.project
-            ? parseInt(task.project) === parseInt(state.filters.project)
-            : true)
-        )
-      })
+    getTasksByState: (state) => (stateId) => {
+      return state.tasks.filter((task) => task.state_id === stateId)
+    },
+    getTasksByPriority: (state) => (priorityId) => {
+      return state.tasks.filter((task) => task.priority_id === priorityId)
+    },
+    getTasksByAssignee: (state) => (personId) => {
+      return state.tasks.filter((task) => task.assigned_to === personId)
     },
   },
 
   actions: {
-    async fetchTasks() {
-      this.loading = true
+    async fetchProjectTasks(projectId) {
       try {
+        this.loading = true
         const { data, error } = await supabase
           .from('tasks')
-          .select('*')
+          .select(
+            `
+            *,
+            state:task_states(*),
+            priority:task_priorities(*),
+            assignee:people(id, name, avatar_url),
+            creator:people(id, name, avatar_url)
+          `,
+          )
+          .eq('project_id', projectId)
           .order('created_at', { ascending: false })
 
         if (error) throw error
         this.tasks = data
       } catch (error) {
         console.error('Error fetching tasks:', error)
+        this.error = error.message
       } finally {
         this.loading = false
       }
     },
 
-    async addTask(task) {
+    async createTask(taskData) {
       try {
+        this.loading = true
+        const authStore = useAuthStore()
+        const projectStore = useProjectStore()
+
+        // If no state is specified, use the first state (usually Backlog)
+        if (!taskData.state_id && projectStore.taskStates.length > 0) {
+          taskData.state_id = projectStore.taskStates[0].id
+        }
+
         const { data, error } = await supabase
           .from('tasks')
           .insert([
             {
-              ...task,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
+              ...taskData,
+              created_by: authStore.user.id,
             },
           ])
-          .select()
+          .select(
+            `
+            *,
+            state:task_states(*),
+            priority:task_priorities(*),
+            assignee:people(id, name, avatar_url),
+            creator:people(id, name, avatar_url)
+          `,
+          )
+          .single()
 
         if (error) throw error
-        this.tasks.unshift(data[0])
+        this.tasks.unshift(data)
+        return { data, error: null }
       } catch (error) {
-        console.error('Error adding task:', error)
-        throw error
+        console.error('Error creating task:', error)
+        return { data: null, error }
+      } finally {
+        this.loading = false
       }
     },
 
     async updateTask(taskId, updates) {
       try {
+        this.loading = true
         const { data, error } = await supabase
           .from('tasks')
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updates)
           .eq('id', taskId)
-          .select()
+          .select(
+            `
+            *,
+            state:task_states(*),
+            priority:task_priorities(*),
+            assignee:people(id, name, avatar_url),
+            creator:people(id, name, avatar_url)
+          `,
+          )
+          .single()
 
         if (error) throw error
-        const index = this.tasks.findIndex((t) => t.id === taskId)
-        if (index !== -1) {
-          this.tasks[index] = data[0]
+
+        const taskIndex = this.tasks.findIndex((t) => t.id === taskId)
+        if (taskIndex !== -1) {
+          this.tasks[taskIndex] = data
         }
+
+        return { data, error: null }
       } catch (error) {
         console.error('Error updating task:', error)
-        throw error
+        return { data: null, error }
+      } finally {
+        this.loading = false
       }
     },
 
     async deleteTask(taskId) {
       try {
+        this.loading = true
         const { error } = await supabase.from('tasks').delete().eq('id', taskId)
+
         if (error) throw error
         this.tasks = this.tasks.filter((t) => t.id !== taskId)
+        return { error: null }
       } catch (error) {
         console.error('Error deleting task:', error)
-        throw error
+        return { error }
+      } finally {
+        this.loading = false
       }
     },
 
-    async bulkUpdateTasks(updates) {
-      try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
-          .in('id', this.selectedTasks)
-
-        if (error) throw error
-        await this.fetchTasks()
-        this.selectedTasks = []
-      } catch (error) {
-        console.error('Error bulk updating tasks:', error)
-        throw error
-      }
+    async updateTaskState(taskId, stateId) {
+      return this.updateTask(taskId, { state_id: stateId })
     },
 
-    clearFilters() {
-      this.filters = {
-        search: '',
-        state: null,
-        priority: null,
-        assigned_to: null,
-        project: null,
-      }
+    async updateTaskPriority(taskId, priorityId) {
+      return this.updateTask(taskId, { priority_id: priorityId })
+    },
+
+    async assignTask(taskId, personId) {
+      return this.updateTask(taskId, { assigned_to: personId })
+    },
+
+    async unassignTask(taskId) {
+      return this.updateTask(taskId, { assigned_to: null })
     },
   },
 })

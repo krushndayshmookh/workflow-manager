@@ -1,169 +1,316 @@
 <template>
-  <q-card style="min-width: 400px">
-    <q-card-section>
-      <div class="text-h6">{{ task ? 'Edit Task' : 'New Task' }}</div>
-    </q-card-section>
+  <q-dialog
+    :model-value="modelValue"
+    @update:model-value="$emit('update:model-value', $event)"
+    persistent
+    maximized
+    :class="$q.platform.is.mobile ? 'q-dialog--maximized' : ''"
+  >
+    <q-card :style="$q.platform.is.mobile ? {} : { maxWidth: '600px', margin: '32px auto' }">
+      <q-card-section class="row items-center">
+        <div class="text-h6">{{ task.id ? 'Edit Task' : 'Create Task' }}</div>
+        <q-space />
+        <q-btn icon="close" flat round dense v-close-popup />
+      </q-card-section>
 
-    <q-card-section class="q-pt-none">
-      <q-form @submit="onSubmit" class="q-gutter-md">
-        <q-input
-          v-model="form.title"
-          label="Title"
-          :rules="[(val) => !!val || 'Title is required']"
-          outlined
-          dense
-        />
+      <q-separator />
 
-        <q-input v-model="form.description" label="Description" type="textarea" outlined dense />
+      <q-card-section class="q-pa-md">
+        <q-form @submit="onSubmit" class="q-gutter-md">
+          <!-- Title -->
+          <q-input
+            v-model="task.title"
+            label="Title"
+            :rules="[(val) => !!val || 'Title is required']"
+            outlined
+            autofocus
+          />
 
-        <div class="row q-col-gutter-sm">
-          <div class="col-12 col-sm-6">
-            <q-select
-              v-model="form.state"
-              :options="taskStore.states"
-              option-label="name"
-              option-value="id"
-              label="State"
-              emit-value
-              map-options
-              outlined
-              dense
-              :rules="[(val) => !!val || 'State is required']"
+          <!-- Description -->
+          <q-input
+            v-model="task.description"
+            label="Description"
+            type="textarea"
+            outlined
+            autogrow
+          />
+
+          <div class="row q-col-gutter-md">
+            <!-- State -->
+            <div class="col-12 col-sm-6">
+              <q-select
+                v-model="task.state_id"
+                :options="states"
+                option-label="name"
+                option-value="id"
+                label="State"
+                outlined
+                emit-value
+                map-options
+              >
+                <!-- eslint-disable-next-line vue/no-unused-vars -->
+                <template v-slot:option="{ itemProps, opt, selected }">
+                  <q-item v-bind="itemProps">
+                    <q-item-section>
+                      <q-chip
+                        :style="{ backgroundColor: opt.color }"
+                        text-color="white"
+                        size="sm"
+                        class="q-mr-sm"
+                      >
+                        {{ opt.name }}
+                      </q-chip>
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+            </div>
+
+            <!-- Priority -->
+            <div class="col-12 col-sm-6">
+              <q-select
+                v-model="task.priority_id"
+                :options="priorities"
+                option-label="name"
+                option-value="id"
+                label="Priority"
+                outlined
+                emit-value
+                map-options
+              >
+                <!-- eslint-disable-next-line vue/no-unused-vars -->
+                <template v-slot:option="{ itemProps, opt, selected }">
+                  <q-item v-bind="itemProps">
+                    <q-item-section>
+                      <q-chip
+                        :style="{ backgroundColor: opt.color }"
+                        text-color="white"
+                        size="sm"
+                        class="q-mr-sm"
+                      >
+                        {{ opt.name }}
+                      </q-chip>
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+            </div>
+
+            <!-- Assignee -->
+            <div class="col-12">
+              <q-select
+                v-model="task.assigned_to"
+                :options="members"
+                option-label="person.name"
+                option-value="person.id"
+                label="Assignee"
+                outlined
+                clearable
+                emit-value
+                map-options
+              >
+                <!-- eslint-disable-next-line vue/no-unused-vars -->
+                <template v-slot:option="{ itemProps, opt, selected }">
+                  <q-item v-bind="itemProps">
+                    <q-item-section avatar>
+                      <q-avatar size="26px">
+                        <img
+                          :src="
+                            opt.person.avatar_url || 'https://cdn.quasar.dev/img/boy-avatar.png'
+                          "
+                        />
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>{{ opt.person.name }}</q-item-section>
+                  </q-item>
+                </template>
+
+                <template v-slot:selected>
+                  <template v-if="task.assigned_to">
+                    <q-avatar size="26px" class="q-mr-sm">
+                      <img
+                        :src="
+                          getSelectedMember?.person.avatar_url ||
+                          'https://cdn.quasar.dev/img/boy-avatar.png'
+                        "
+                      />
+                    </q-avatar>
+                    {{ getSelectedMember?.person.name }}
+                  </template>
+                  <template v-else>Unassigned</template>
+                </template>
+              </q-select>
+            </div>
+          </div>
+
+          <!-- Due Date -->
+          <q-input v-model="task.due_date" label="Due Date" outlined clearable>
+            <template v-slot:append>
+              <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                  <q-date v-model="task.due_date" mask="YYYY-MM-DD">
+                    <div class="row items-center justify-end">
+                      <q-btn v-close-popup label="Close" color="primary" flat />
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
+
+          <!-- Labels -->
+          <q-select
+            v-model="task.labels"
+            label="Labels"
+            outlined
+            multiple
+            use-chips
+            use-input
+            new-value-mode="add"
+            input-debounce="0"
+          >
+            <template v-slot:chip="{ remove, label }">
+              <q-chip
+                removable
+                @remove="remove"
+                :style="{ backgroundColor: getLabelColor(label) }"
+                text-color="white"
+                size="sm"
+              >
+                {{ label }}
+              </q-chip>
+            </template>
+          </q-select>
+
+          <div class="row justify-end q-gutter-sm">
+            <q-btn label="Cancel" color="negative" flat v-close-popup />
+            <q-btn
+              :label="task.id ? 'Save' : 'Create'"
+              type="submit"
+              color="primary"
+              :loading="loading"
             />
           </div>
-
-          <div class="col-12 col-sm-6">
-            <q-select
-              v-model="form.priority"
-              :options="taskStore.priorities"
-              option-label="name"
-              option-value="id"
-              label="Priority"
-              emit-value
-              map-options
-              outlined
-              dense
-              :rules="[(val) => !!val || 'Priority is required']"
-            />
-          </div>
-        </div>
-
-        <div class="row q-col-gutter-sm">
-          <div class="col-12 col-sm-6">
-            <q-input
-              v-model="form.business_value"
-              type="number"
-              label="Business Value"
-              outlined
-              dense
-            />
-          </div>
-
-          <div class="col-12 col-sm-6">
-            <q-input v-model="form.due_at" type="date" label="Due Date" outlined dense />
-          </div>
-        </div>
-
-        <div class="row q-col-gutter-sm">
-          <div class="col-12 col-sm-6">
-            <q-select
-              v-model="form.assigned_to"
-              :options="people"
-              option-label="name"
-              option-value="email"
-              label="Assigned To"
-              emit-value
-              map-options
-              outlined
-              dense
-              clearable
-            />
-          </div>
-
-          <div class="col-12 col-sm-6">
-            <q-select
-              v-model="form.project"
-              :options="projects"
-              option-label="name"
-              option-value="id"
-              label="Project"
-              emit-value
-              map-options
-              outlined
-              dense
-              clearable
-            >
-              <template v-slot:option="scope">
-                <q-item v-bind="scope.itemProps">
-                  <q-item-section>
-                    <q-item-label>{{ scope.opt.icon }} {{ scope.opt.name }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </template>
-            </q-select>
-          </div>
-        </div>
-
-        <div class="row justify-end q-gutter-sm">
-          <q-btn label="Cancel" color="negative" flat v-close-popup />
-          <q-btn :label="task ? 'Update' : 'Create'" type="submit" color="primary" />
-        </div>
-      </q-form>
-    </q-card-section>
-  </q-card>
+        </q-form>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useTaskStore } from 'stores/task'
-import { useProjectStore } from 'stores/project'
+import { ref, computed, onMounted } from 'vue'
+import { useQuasar } from 'quasar'
 
 const props = defineProps({
-  task: {
+  modelValue: {
+    type: Boolean,
+    required: true,
+  },
+  states: {
+    type: Array,
+    required: true,
+  },
+  priorities: {
+    type: Array,
+    required: true,
+  },
+  members: {
+    type: Array,
+    required: true,
+  },
+  initialTask: {
     type: Object,
+    default: () => ({}),
+  },
+  initialState: {
+    type: [String, Number],
     default: null,
   },
 })
 
-const emit = defineEmits(['submit'])
-const taskStore = useTaskStore()
-const projectStore = useProjectStore()
+const emit = defineEmits(['update:model-value', 'save'])
 
-// Sample data for people and projects (should come from stores)
-const people = [
-  { email: 'krushn', name: 'Krushn' },
-  { email: 'ankita', name: 'Ankita' },
-  { email: 'sahil', name: 'Sahil' },
-  { email: 'tushar', name: 'Tushar' },
-  { email: 'kaushal', name: 'Kaushal' },
-]
+const $q = useQuasar()
+const loading = ref(false)
 
-const projects = computed(() => projectStore.projectsWithIcons)
-
-const form = ref({
+const task = ref({
   title: '',
   description: '',
-  state: 1, // Default to "To Do"
-  priority: 2, // Default to "Medium"
-  business_value: 100,
-  assigned_to: '',
-  project: '',
-  due_at: null,
+  state_id: props.initialState || (props.states[0]?.id ?? null),
+  priority_id: props.priorities[0]?.id ?? null,
+  assigned_to: null,
+  due_date: null,
+  labels: [],
+  ...props.initialTask,
 })
 
-onMounted(() => {
-  projectStore.fetchProjects()
-  if (props.task) {
-    form.value = { ...props.task }
-  }
+const getSelectedMember = computed(() => {
+  return props.members.find((m) => m.person.id === task.value.assigned_to)
 })
+
+// Generate a random color for new labels
+function getLabelColor(label) {
+  const colors = [
+    '#1976D2',
+    '#2196F3',
+    '#00BCD4',
+    '#009688',
+    '#4CAF50',
+    '#8BC34A',
+    '#CDDC39',
+    '#FFC107',
+    '#FF9800',
+    '#FF5722',
+  ]
+  let hash = 0
+  for (let i = 0; i < label.length; i++) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return colors[Math.abs(hash) % colors.length]
+}
 
 async function onSubmit() {
-  if (props.task) {
-    await taskStore.updateTask(props.task.id, form.value)
-  } else {
-    await taskStore.addTask(form.value)
+  try {
+    loading.value = true
+    await emit('save', { ...task.value })
+    emit('update:model-value', false)
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: error.message || 'Failed to save task',
+    })
+  } finally {
+    loading.value = false
   }
-  emit('submit')
 }
+
+// Reset form when dialog is opened
+onMounted(() => {
+  if (!props.initialTask.id) {
+    task.value = {
+      title: '',
+      description: '',
+      state_id: props.initialState || (props.states[0]?.id ?? null),
+      priority_id: props.priorities[0]?.id ?? null,
+      assigned_to: null,
+      due_date: null,
+      labels: [],
+    }
+  }
+})
 </script>
+
+<style lang="scss" scoped>
+.q-dialog--maximized {
+  .q-card {
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .q-card-section {
+    flex: 1;
+    overflow-y: auto;
+  }
+}
+</style>
